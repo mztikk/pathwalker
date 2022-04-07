@@ -28,27 +28,28 @@ impl Iterator for PathWalker {
     type Item = DirEntry;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if !self.buffer.is_empty() {
-            return self.buffer.pop();
-        }
+        match self.buffer.pop() {
+            Some(entry) => Some(entry),
+            None => {
+                let entry = self.entries.pop();
 
-        let entry = self.entries.pop();
+                if let Some(entry) = entry {
+                    if let Ok(paths) = fs::read_dir(entry) {
+                        for path in paths.flatten() {
+                            let entry_path = path.path();
+                            if !entry_path.is_symlink() || self.follow_symlinks {
+                                if entry_path.is_dir() {
+                                    self.entries.push(entry_path);
+                                }
 
-        if let Some(entry) = entry {
-            if let Ok(paths) = fs::read_dir(entry) {
-                for path in paths.flatten() {
-                    let entry_path = path.path();
-                    if !entry_path.is_symlink() || self.follow_symlinks {
-                        if entry_path.is_dir() {
-                            self.entries.push(entry_path);
+                                self.buffer.push(path);
+                            }
                         }
-
-                        self.buffer.push(path);
                     }
                 }
+
+                self.buffer.pop()
             }
         }
-
-        self.buffer.pop()
     }
 }
