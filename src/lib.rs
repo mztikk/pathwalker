@@ -6,6 +6,7 @@ use std::{
 pub struct PathWalker {
     entries: Vec<PathBuf>,
     buffer: Vec<DirEntry>,
+    follow_symlinks: bool,
 }
 
 impl PathWalker {
@@ -13,7 +14,13 @@ impl PathWalker {
         Self {
             entries: vec![path],
             buffer: Vec::new(),
+            follow_symlinks: false,
         }
+    }
+
+    pub fn follow_symlinks(mut self) -> Self {
+        self.follow_symlinks = true;
+        self
     }
 }
 
@@ -31,7 +38,7 @@ impl Iterator for PathWalker {
             if let Ok(paths) = fs::read_dir(entry) {
                 for path in paths.flatten() {
                     let entry_path = path.path();
-                    if !entry_path.is_symlink() {
+                    if !entry_path.is_symlink() || self.follow_symlinks {
                         if entry_path.is_dir() {
                             self.entries.push(entry_path);
                         }
