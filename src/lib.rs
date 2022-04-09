@@ -32,22 +32,22 @@ impl Iterator for PathWalker {
             Some(entry) => Some(entry),
             None => {
                 while self.buffer.is_empty() && !self.entries.is_empty() {
-                    let current_entry = self.entries.pop();
-
-                    if let Some(current_entry) = current_entry {
-                        for (entry_path, entry) in fs::read_dir(&current_entry)
-                            .into_iter()
-                            .flatten()
-                            .flatten()
-                            .map(|e| (e.path(), e))
-                        {
-                            if !entry_path.is_symlink() || self.follow_symlinks {
-                                if entry_path.is_dir() {
-                                    self.entries.push(entry_path);
-                                }
-
-                                self.buffer.push(entry);
+                    for (entry_path, entry) in self
+                        .entries
+                        .pop()
+                        .map(fs::read_dir)
+                        .into_iter()
+                        .flatten()
+                        .flatten()
+                        .flatten()
+                        .map(|e| (e.path(), e))
+                    {
+                        if !entry_path.is_symlink() || self.follow_symlinks {
+                            if entry_path.is_dir() {
+                                self.entries.push(entry_path);
                             }
+
+                            self.buffer.push(entry);
                         }
                     }
                 }
