@@ -3,10 +3,15 @@ use std::{
     path::PathBuf,
 };
 
+#[cfg(feature = "pathfilter")]
+use pathfilter::PathFilter;
+
 pub struct PathWalker {
     entries: Vec<PathBuf>,
     buffer: Vec<DirEntry>,
     follow_symlinks: bool,
+    #[cfg(feature = "pathfilter")]
+    filters: Vec<Box<dyn PathFilter>>,
 }
 
 impl PathWalker {
@@ -15,11 +20,19 @@ impl PathWalker {
             entries: vec![path],
             buffer: Vec::new(),
             follow_symlinks: false,
+            #[cfg(feature = "pathfilter")]
+            filters: Vec::new(),
         }
     }
 
     pub fn follow_symlinks(mut self) -> Self {
         self.follow_symlinks = true;
+        self
+    }
+
+    #[cfg(feature = "pathfilter")]
+    pub fn add_filter(mut self, filter: Box<dyn PathFilter>) -> Self {
+        self.filters.push(filter);
         self
     }
 }
@@ -42,6 +55,12 @@ impl Iterator for PathWalker {
                         .flatten()
                         .map(|e| (e.path(), e))
                     {
+                        if cfg!(feature = "pathfilter")
+                            && self.filters.iter().any(|f| f.ignore(&entry_path))
+                    {
+                            continue;
+                        }
+
                         if !entry_path.is_symlink() || self.follow_symlinks {
                             if entry_path.is_dir() {
                                 self.entries.push(entry_path);
