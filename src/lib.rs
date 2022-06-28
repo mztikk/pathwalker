@@ -55,9 +55,8 @@ impl Iterator for PathWalker {
                         .flatten()
                         .map(|e| (e.path(), e))
                     {
-                        if cfg!(feature = "pathfilter")
-                            && self.filters.iter().any(|f| f.ignore(&entry_path))
-                    {
+                        #[cfg(feature = "pathfilter")]
+                        if self.filters.iter().any(|f| f.ignore(&entry_path)) {
                             continue;
                         }
 
