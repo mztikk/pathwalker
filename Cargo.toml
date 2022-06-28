@@ -6,3 +6,6 @@ authors = ["Nils Feierabend <mztikk@outlook.de>"]
 repository = "https://github.com/mztikk/pathwalker"
 license = "MIT"
 description = "library to walk path"
+
+[dependencies]
+pathfilter = { version = "0.1.0", optional = true }
