@@ -1,6 +1,6 @@
 [package]
 name = "pathwalker"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Nils Feierabend <mztikk@outlook.de>"]
 repository = "https://github.com/mztikk/pathwalker"
@@ -8,4 +8,4 @@ license = "MIT"
 description = "library to walk path"
 
 [dependencies]
-pathfilter = { version = "0.2.0", optional = true }
+pathfilter = { version = "0.3.0", optional = true }
