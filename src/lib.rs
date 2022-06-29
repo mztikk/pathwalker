@@ -29,10 +29,17 @@ impl PathWalker {
         self.follow_symlinks = true;
         self
     }
+}
 
     #[cfg(feature = "pathfilter")]
+impl PathWalker {
     pub fn add_filter(mut self, filter: Box<dyn PathFilter>) -> Self {
         self.filters.push(filter);
+        self
+    }
+
+    pub fn with_filter(mut self, filter: impl PathFilter + 'static) -> Self {
+        self.filters.push(Box::new(filter));
         self
     }
 }
