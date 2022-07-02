@@ -31,7 +31,7 @@ impl PathWalker {
     }
 }
 
-    #[cfg(feature = "pathfilter")]
+#[cfg(feature = "pathfilter")]
 impl PathWalker {
     pub fn add_filter(mut self, filter: Box<dyn PathFilter>) -> Self {
         self.filters.push(filter);
@@ -67,13 +67,15 @@ impl Iterator for PathWalker {
                             continue;
                         }
 
-                        if !entry_path.is_symlink() || self.follow_symlinks {
-                            if entry_path.is_dir() {
-                                self.entries.push(entry_path);
-                            }
+                        if let Ok(metadata) = entry.metadata() {
+                            if !metadata.is_symlink() || self.follow_symlinks {
+                                if metadata.is_dir() {
+                                    self.entries.push(entry_path);
+                                }
 
-                            self.buffer.push(entry);
-                        }
+                                self.buffer.push(entry);
+                            }
+                        };
                     }
                 }
 
