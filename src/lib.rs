@@ -1,10 +1,9 @@
+#[cfg(feature = "pathfilter")]
+use pathfilter::PathFilter;
 use std::{
     fs::{self, DirEntry},
     path::PathBuf,
 };
-
-#[cfg(feature = "pathfilter")]
-use pathfilter::PathFilter;
 
 pub struct PathWalker {
     directories: Vec<PathBuf>,
