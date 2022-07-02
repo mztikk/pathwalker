@@ -7,8 +7,8 @@ use std::{
 use pathfilter::PathFilter;
 
 pub struct PathWalker {
-    entries: Vec<PathBuf>,
-    buffer: Vec<DirEntry>,
+    directories: Vec<PathBuf>,
+    items: Vec<DirEntry>,
     follow_symlinks: bool,
     #[cfg(feature = "pathfilter")]
     filters: Vec<Box<dyn PathFilter>>,
@@ -17,8 +17,8 @@ pub struct PathWalker {
 impl PathWalker {
     pub fn new(path: PathBuf) -> Self {
         Self {
-            entries: vec![path],
-            buffer: Vec::new(),
+            directories: vec![path],
+            items: Vec::new(),
             follow_symlinks: false,
             #[cfg(feature = "pathfilter")]
             filters: Vec::new(),
@@ -44,42 +44,46 @@ impl PathWalker {
     }
 }
 
+impl PathWalker {
+    fn handle_entry(&mut self, entry: DirEntry) {
+        let entry_path = entry.path();
+
+        #[cfg(feature = "pathfilter")]
+        if self.filters.iter().any(|f| f.ignore(&entry_path)) {
+            return;
+        }
+
+        if let Ok(metadata) = entry.metadata() {
+            if !metadata.is_symlink() || self.follow_symlinks {
+                if metadata.is_dir() {
+                    self.directories.push(entry_path);
+                }
+
+                self.items.push(entry);
+            }
+        };
+    }
+}
+
 impl Iterator for PathWalker {
     type Item = DirEntry;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.buffer.pop() {
+        match self.items.pop() {
             Some(entry) => Some(entry),
             None => {
-                while self.buffer.is_empty() && !self.entries.is_empty() {
-                    for (entry_path, entry) in self
-                        .entries
+                while self.items.is_empty() && !self.directories.is_empty() {
+                    self.directories
                         .pop()
                         .map(fs::read_dir)
                         .into_iter()
                         .flatten()
                         .flatten()
                         .flatten()
-                        .map(|e| (e.path(), e))
-                    {
-                        #[cfg(feature = "pathfilter")]
-                        if self.filters.iter().any(|f| f.ignore(&entry_path)) {
-                            continue;
-                        }
-
-                        if let Ok(metadata) = entry.metadata() {
-                            if !metadata.is_symlink() || self.follow_symlinks {
-                                if metadata.is_dir() {
-                                    self.entries.push(entry_path);
-                                }
-
-                                self.buffer.push(entry);
-                            }
-                        };
-                    }
+                        .for_each(|entry| self.handle_entry(entry))
                 }
 
-                self.buffer.pop()
+                self.items.pop()
             }
         }
     }
