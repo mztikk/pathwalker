@@ -53,7 +53,7 @@ impl PathWalker {
         }
 
         if let Ok(metadata) = entry.metadata() {
-            if !metadata.is_symlink() || self.follow_symlinks {
+            if self.follow_symlinks || !metadata.is_symlink() {
                 if metadata.is_dir() {
                     self.directories.push(entry_path);
                 }
