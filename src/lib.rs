@@ -1,3 +1,4 @@
+use moar_options::*;
 #[cfg(feature = "pathfilter")]
 use pathfilter::PathFilter;
 use std::{
@@ -9,6 +10,8 @@ pub struct PathWalker {
     directories: Vec<PathBuf>,
     items: Vec<DirEntry>,
     follow_symlinks: bool,
+    max_depth: Option<u64>,
+    current_depth: u64,
     #[cfg(feature = "pathfilter")]
     filters: Vec<Box<dyn PathFilter>>,
 }
@@ -19,6 +22,8 @@ impl PathWalker {
             directories: vec![path],
             items: Vec::new(),
             follow_symlinks: false,
+            max_depth: None,
+            current_depth: 0,
             #[cfg(feature = "pathfilter")]
             filters: Vec::new(),
         }
@@ -26,6 +31,11 @@ impl PathWalker {
 
     pub fn follow_symlinks(mut self) -> Self {
         self.follow_symlinks = true;
+        self
+    }
+
+    pub fn with_max_depth<T: Into<Option<u64>>>(mut self, max_depth: T) -> Self {
+        self.max_depth = max_depth.into();
         self
     }
 }
@@ -54,8 +64,13 @@ impl PathWalker {
 
         if let Ok(metadata) = entry.metadata() {
             if self.follow_symlinks || !metadata.is_symlink() {
-                if metadata.is_dir() {
+                if metadata.is_dir()
+                    && self
+                        .max_depth
+                        .is_none_or(|&max_depth| self.current_depth < max_depth)
+                {
                     self.directories.push(entry_path);
+                    self.current_depth += 1;
                 }
 
                 self.items.push(entry);
