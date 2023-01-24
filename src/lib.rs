@@ -17,9 +17,9 @@ pub struct PathWalker {
 }
 
 impl PathWalker {
-    pub fn new(path: PathBuf) -> Self {
+    pub fn new<T: Into<PathBuf>>(path: T) -> Self {
         Self {
-            directories: vec![path],
+            directories: vec![path.into()],
             items: Vec::new(),
             follow_symlinks: false,
             max_depth: None,
@@ -37,6 +37,12 @@ impl PathWalker {
     pub fn with_max_depth<T: Into<Option<u64>>>(mut self, max_depth: T) -> Self {
         self.max_depth = max_depth.into();
         self
+    }
+}
+
+impl Default for PathWalker {
+    fn default() -> Self {
+        Self::new(".")
     }
 }
 
