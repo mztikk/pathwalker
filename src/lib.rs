@@ -68,9 +68,9 @@ impl PathWalker {
             return;
         }
 
-        if let Ok(metadata) = entry.metadata() {
-            if self.follow_symlinks || !metadata.is_symlink() {
-                if metadata.is_dir()
+        if let Ok(file_type) = entry.file_type() {
+            if self.follow_symlinks || !file_type.is_symlink() {
+                if file_type.is_dir()
                     && self
                         .max_depth
                         .is_none_or(|&max_depth| self.current_depth < max_depth)
