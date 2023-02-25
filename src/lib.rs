@@ -1,3 +1,6 @@
+use direntryfilter::{
+    directory_only::DirectoryOnlyFilter, file_only::FileOnlyFilter, DirEntryFilter,
+};
 use moar_options::*;
 #[cfg(feature = "pathfilter")]
 use pathfilter::PathFilter;
@@ -12,8 +15,9 @@ pub struct PathWalker {
     follow_symlinks: bool,
     max_depth: Option<u64>,
     current_depth: u64,
+    direntry_filters: Vec<Box<dyn DirEntryFilter>>,
     #[cfg(feature = "pathfilter")]
-    filters: Vec<Box<dyn PathFilter>>,
+    path_filters: Vec<Box<dyn PathFilter>>,
 }
 
 impl PathWalker {
@@ -24,8 +28,9 @@ impl PathWalker {
             follow_symlinks: false,
             max_depth: None,
             current_depth: 0,
+            direntry_filters: Vec::new(),
             #[cfg(feature = "pathfilter")]
-            filters: Vec::new(),
+            path_filters: Vec::new(),
         }
     }
 
@@ -49,12 +54,25 @@ impl Default for PathWalker {
 #[cfg(feature = "pathfilter")]
 impl PathWalker {
     pub fn add_filter(mut self, filter: Box<dyn PathFilter>) -> Self {
-        self.filters.push(filter);
+        self.path_filters.push(filter);
         self
     }
 
     pub fn with_filter(mut self, filter: impl PathFilter + 'static) -> Self {
-        self.filters.push(Box::new(filter));
+        self.path_filters.push(Box::new(filter));
+        self
+    }
+}
+
+impl PathWalker {
+    pub fn files_only(mut self) -> Self {
+        self.direntry_filters.push(Box::<FileOnlyFilter>::default());
+        self
+    }
+
+    pub fn directories_only(mut self) -> Self {
+        self.direntry_filters
+            .push(Box::<DirectoryOnlyFilter>::default());
         self
     }
 }
@@ -64,7 +82,7 @@ impl PathWalker {
         let entry_path = entry.path();
 
         #[cfg(feature = "pathfilter")]
-        if self.filters.iter().any(|f| f.ignore(&entry_path)) {
+        if self.path_filters.iter().any(|f| f.ignore(&entry_path)) {
             return;
         }
 
@@ -77,6 +95,10 @@ impl PathWalker {
                 {
                     self.directories.push(entry_path);
                     self.current_depth += 1;
+                }
+
+                if self.direntry_filters.iter().any(|f| f.ignore(&entry)) {
+                    return;
                 }
 
                 self.items.push(entry);
