@@ -9,4 +9,4 @@ description = "library to walk path"
 
 [dependencies]
 pathfilter = { version = "0.3.1", optional = true }
-moar_options = { version = "0.1.0" }
+moar_options = { version = "0.1.1" }

@@ -73,7 +73,7 @@ impl PathWalker {
                 if file_type.is_dir()
                     && self
                         .max_depth
-                        .is_none_or(|&max_depth| self.current_depth < max_depth)
+                        .owned_is_none_or(|max_depth| self.current_depth < max_depth)
                 {
                     self.directories.push(entry_path);
                     self.current_depth += 1;
