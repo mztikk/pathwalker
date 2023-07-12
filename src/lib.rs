@@ -51,8 +51,8 @@ impl Default for PathWalker {
 
 #[cfg(feature = "pathfilter")]
 impl PathWalker {
-    pub fn with_filter(mut self, filter: PathFilter) -> Self {
-        self.path_filters.push(filter);
+    pub fn with_filter<F: Into<PathFilter>>(mut self, filter: F) -> Self {
+        self.path_filters.push(filter.into());
         self
     }
 
